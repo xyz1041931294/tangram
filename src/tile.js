@@ -197,14 +197,16 @@ export default class Tile {
 
                     // Get draw groups for this feature
                     let layer_rules = rules[layer_name];
-                    let draw_groups = layer_rules.buildDrawGroups(context, true);
-                    if (!draw_groups) {
+                    let groups = layer_rules.buildDrawGroups(context, true);
+                    if (!groups) {
                         continue;
                     }
+                    context.draw = groups.draw;
+                    context.rules = groups.rules;
 
                     // Render draw groups
-                    for (let group_name in draw_groups) {
-                        let group = draw_groups[group_name];
+                    for (let group_name in groups.draw) {
+                        let group = groups.draw[group_name];
                         if (!group.visible) {
                             continue;
                         }

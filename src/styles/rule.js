@@ -61,6 +61,7 @@ class Rule {
         this.id = Rule.id++;
         this.parent = parent;
         this.name = name;
+        this.full_name = this.parent ? this.parent.full_name + '.' + this.name : this.name;
         this.draw = draw;
         this.filter = filter;
         this.visible = visible !== undefined ? visible : (this.parent && this.parent.visible);
@@ -151,22 +152,30 @@ export class RuleTree extends Rule {
                     }
 
                     // Calculate each draw group
+                    let cache;
                     for (let draw_key in draw_keys) {
-                        ruleCache[cache_key] = ruleCache[cache_key] || {};
-                        ruleCache[cache_key][draw_key] = mergeTrees(draw_rules, draw_key, context);
+                        cache = ruleCache[cache_key] = ruleCache[cache_key] || { draw: {} };
+                        cache.draw[draw_key] = mergeTrees(draw_rules, draw_key, context);
 
                         // Only save the ones that weren't null
-                        if (!ruleCache[cache_key][draw_key]) {
-                            delete ruleCache[cache_key][draw_key];
+                        if (!cache.draw[draw_key]) {
+                            delete cache.draw[draw_key];
                         }
                         else {
-                            ruleCache[cache_key][draw_key].key = cache_key + '/' + draw_key;
+                            cache.draw[draw_key].key = cache_key + '/' + draw_key;
                         }
                     }
 
-                    // No rules evaluated
-                    if (ruleCache[cache_key] && Object.keys(ruleCache[cache_key]).length === 0) {
-                        ruleCache[cache_key] = null;
+                    if (cache) {
+                        // No rules evaluated
+                        if (cache.draw && Object.keys(cache.draw).length === 0) {
+                            ruleCache[cache_key] = null;
+                        }
+                        // Save full rule names
+                        else {
+                            cache.key = cache_key;
+                            cache.rules = rules.map(x => x && x.full_name);
+                        }
                     }
                 }
             }

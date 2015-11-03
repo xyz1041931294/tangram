@@ -8,6 +8,7 @@ import CanvasText from './canvas_text';
 import LabelBuilder from './label_builder';
 import FeatureLabel from './feature_label';
 import LabelOptions from './label_options';
+import RepeatGroup from './repeat_group';
 import {StyleParser} from '../style_parser';
 
 import log from 'loglevel';
@@ -57,6 +58,7 @@ Object.assign(TextStyle, {
         this.textures = {};
         this.canvas = {};
         this.aabbs = {};
+        this.repeat_groups = {};
         this.features = {};
         this.feature_labels = {};
         this.feature_style_key = {};
@@ -68,6 +70,7 @@ Object.assign(TextStyle, {
         delete this.textures[tile];
         delete this.canvas[tile];
         delete this.aabbs[tile];
+        delete this.repeat_groups[tile];
         // cleanup stored features for this tile
         for (let key in this.features) {
             let features = this.features[key];
@@ -122,7 +125,7 @@ Object.assign(TextStyle, {
         delete this.textures[tile];
         delete this.canvas[tile];
 
-        return Promise.resolve({ texts, texture });
+        return { texts, texture };
     },
 
     // Override
@@ -219,6 +222,7 @@ Object.assign(TextStyle, {
     // when two collide, discard the lower-priority label
     discardLabels (tile, labels, texts) {
         this.aabbs[tile] = [];
+        this.repeat_groups[tile] = {};
         this.feature_labels[tile] = new Map();
 
         // Process labels by priority
@@ -230,6 +234,17 @@ Object.assign(TextStyle, {
 
             for (let i = 0; i < labels[priority].length; i++) {
                 let { style, feature, label } = labels[priority][i];
+
+                // check for repeats
+                let info = texts[style][label.text];
+                let repeat_group = this.repeat_groups[tile][info.repeat_key];
+                if (repeat_group) {
+                    let check = repeat_group.check(label);
+                    if (check.repeat) {
+                        console.log(`discard label '${label.text}', dist ${Math.sqrt(check.dist_sq)/info.units_per_pixel} < ${Math.sqrt(repeat_group.repeat_dist_sq)/info.units_per_pixel}`);
+                        continue;
+                    }
+                }
 
                 // test the label for intersections with other labels in the tile
                 if (!label.discard(this.aabbs[tile])) {
@@ -244,6 +259,13 @@ Object.assign(TextStyle, {
                     this.feature_labels[tile].get(feature).push(label);
                     // increment a count of how many times this style is used in the tile
                     texts[style][label.text].ref++;
+
+                    // register as placed for future repeat culling
+                    if (!repeat_group) {
+                        repeat_group =
+                            this.repeat_groups[tile][info.repeat_key] = new RepeatGroup(info.repeat_key, info.repeat_dist);
+                    }
+                    repeat_group.add(label);
                 }
             }
         }
@@ -409,6 +431,12 @@ Object.assign(TextStyle, {
                 line_exceed = rule.line_exceed.substr(0,rule.line_exceed.length-1);
             }
 
+            // repeat rules
+            let layer_key = context.rules.join('/');
+            let repeat_key = layer_key + '/' + text;
+            let repeat_dist = (rule.min_repeat || 200) * tile.units_per_pixel;
+
+            // save calculated properties for later building
             if (!this.texts[tile.key][style_key][text]) {
                 // first label with this text/style/tile combination, make a new label entry
                 this.texts[tile.key][style_key][text] = {
@@ -420,6 +448,8 @@ Object.assign(TextStyle, {
                     anchor,
                     line_exceed,
                     move_into_tile: rule.move_into_tile,
+                    repeat_key,
+                    repeat_dist,
                     ref: 0
                 };
             }

@@ -1,5 +1,6 @@
 import Texture from './gl/texture';
 import WorkerBroker from './utils/worker_broker';
+// import Utils from './utils/utils';
 
 export default class FeatureSelection {
 
@@ -207,12 +208,14 @@ export default class FeatureSelection {
         return this.map[key];
     }
 
-    static makeColor(feature, tile) {
+    static makeColor(feature, tile, context) {
         var selector = this.makeEntry(tile);
         selector.feature = {
             id: feature.id,
             properties: feature.properties,
-            tile: tile.key
+            tile: tile.key,
+            // draw: Utils.functionsToStrings(context.draw),
+            rules: context.rules
         };
 
         return selector.color;
