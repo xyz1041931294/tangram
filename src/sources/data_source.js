@@ -104,6 +104,8 @@ export default class DataSource {
                             }
                         });
 
+                        feature.geometry = Geo.dedupeGeometry(feature.geometry);
+
                         // Optionally enforce winding order since not all data sources guarantee it
                         if (this.enforce_winding) {
                             Geo.enforceWinding(feature.geometry, 'CCW');

@@ -122,6 +122,58 @@ Geo.transformGeometry = function (geometry, transform) {
     // TODO: support GeometryCollection
 };
 
+Geo.dedupeGeometry = function (geometry) {
+    if (geometry == null) {
+        return; // skip if missing geometry (valid GeoJSON)
+    }
+
+    if (geometry.type === 'LineString') {
+        geometry.coordinates = Geo.dedupeLine(geometry.coordinates);
+
+    }
+    else if (geometry.type === 'MultiLineString') {
+        geometry.coordinates = geometry.coordinates.
+            map(coordinates => Geo.dedupeLine(coordinates)).
+            filter(coordinates => coordinates);
+    }
+    else if (geometry.type === 'Polygon') {
+        geometry.coordinates = geometry.coordinates.
+            map(coordinates => Geo.dedupeLine(coordinates, true)).
+            filter(coordinates => coordinates);
+    }
+    else if (geometry.type === 'MultiPolygon') {
+        geometry.coordinates = geometry.coordinates.
+            map(polygon => {
+                return polygon.
+                    map(coordinates => Geo.dedupeLine(coordinates, true)).
+                    filter(coordinates => coordinates)
+                }).
+            filter(polygon => polygon.length > 0);
+    }
+
+    return geometry.coordinates && geometry.coordinates.length && geometry; // return null if no coords
+};
+
+Geo.dedupeLine = function (line, closed) {
+    let i, dupes = [];
+
+    // Collect dupe points
+    for (i=0; i < line.length - 1; i++) {
+        if (line[i][0] === line[i+1][0] && line[i][1] === line[i+1][1]) {
+            dupes.push(i);
+        }
+    }
+
+    // Remove dupe points
+    dupes.forEach(d => line.splice(d, 1));
+
+    // Line needs at least 2 points, polygon needs at least 3 (+1 to close)
+    if (!closed && line.length < 2 || closed && line.length < 4) {
+        return;
+    }
+    return line;
+};
+
 Geo.boxIntersect = function (b1, b2) {
     return !(
         b2.sw.x > b1.ne.x ||
