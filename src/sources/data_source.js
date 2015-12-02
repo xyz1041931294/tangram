@@ -82,6 +82,29 @@ export default class DataSource {
         }
     }
 
+    static copyLayers (layers) {
+        var copy = {};
+
+        for (var t in layers) {
+            copy[t] = {
+                type: 'FeatureCollection',
+                features: []
+            };
+
+            var num_features = layers[t].features.length;
+            for (var f=0; f < num_features; f++) {
+                var feature = layers[t].features[f];
+
+                copy[t].features.push({
+                    type: feature.type,
+                    properties: Object.assign({}, feature.properties), // TODO: deep clone properties?
+                    geometry: Geo.copyGeometry(feature.geometry)
+                });
+            }
+        }
+        return copy;
+    }
+
     load(dest) {
         dest.source_data = {};
         dest.source_data.layers = {};

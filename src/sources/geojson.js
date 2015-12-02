@@ -39,9 +39,11 @@ export class GeoJSONTileSource extends NetworkTileSource {
         // Apply optional data transform
         if (typeof this.transform === 'function') {
             data = this.transform(data, this.extra_data);
+            source.layers = DataSource.copyLayers(GeoJSONSource.prototype.getLayers(data));
         }
-
-        source.layers = GeoJSONSource.prototype.getLayers(data);
+        else {
+            source.layers = GeoJSONSource.prototype.getLayers(data);
+        }
 
         // A "synthetic" tile that adjusts the tile min anchor to account for tile longitude wrapping
         let anchor = {

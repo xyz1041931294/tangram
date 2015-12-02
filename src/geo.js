@@ -122,6 +122,31 @@ Geo.transformGeometry = function (geometry, transform) {
     // TODO: support GeometryCollection
 };
 
+// Copy a geometry
+Geo.copyGeometry = function (geometry) {
+    if (geometry == null) {
+        return; // skip if missing geometry (valid GeoJSON)
+    }
+
+    let copy = { type: geometry.type };
+
+    if (geometry.type === 'Point') {
+        copy.coordinates = geometry.coordinates.slice();
+    }
+    else if (geometry.type === 'LineString' || geometry.type === 'MultiPoint') {
+        copy.coordinates = geometry.coordinates.map(c => c.slice());
+    }
+    else if (geometry.type === 'Polygon' || geometry.type === 'MultiLineString') {
+        copy.coordinates = geometry.coordinates.map(coordinates => coordinates.map(c => c.slice()));
+    }
+    else if (geometry.type === 'MultiPolygon') {
+        copy.coordinates = geometry.coordinates.map(polygon => {
+            return polygon.map(coordinates => coordinates.map(c => c.slice()));
+        });
+    }
+    return copy;
+};
+
 Geo.boxIntersect = function (b1, b2) {
     return !(
         b2.sw.x > b1.ne.x ||
