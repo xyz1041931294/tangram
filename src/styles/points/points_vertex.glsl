@@ -50,6 +50,8 @@ void main() {
     vec2 offset = vec2(a_offset.x, -a_offset.y); // flip y to make it point down
     float theta = radians(a_shape.z * 360.);
 
+    #pragma tangram: rotation
+
     shape = rotate2D(shape, theta);             // apply rotation to vertex
     shape += rotate2D(SHORT(offset), theta);  // apply offset on rotated axis (e.g. so line labels follow text axis)
 

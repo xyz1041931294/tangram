@@ -365,7 +365,8 @@ Object.assign(Points, {
                 offset,
                 angle: Utils.scaleInt16(angle, 360),
                 texcoord_scale: texcoord_scale,
-                texcoord_normalize: 65535
+                texcoord_normalize: 65535,
+                subdiv_x: 10, subdiv_y: 4
             }
         );
     },
