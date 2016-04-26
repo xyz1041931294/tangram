@@ -136,6 +136,7 @@ export default class Texture {
         this.source = this.url;
         this.source_type = 'url';
 
+        this.loaded = null; // keep loaded state null until loading promise is resolved
         this.loading = new Promise((resolve, reject) => {
             let image = new Image();
             image.onload = () => {
@@ -167,6 +168,7 @@ export default class Texture {
 
             image.src = this.source;
         });
+        this.loading = this.loading.then(null, () => this.loaded = false); // catch otherwise unhandled errors
         return this.loading;
     }
 
@@ -356,6 +358,17 @@ Texture.destroy = function (gl) {
             texture.destroy();
         }
     }
+};
+
+// Returns true if any textures are currently loading
+Texture.anyLoading = function () {
+    for (let t in Texture.textures) {
+        let texture = Texture.textures[t];
+        if (texture.loaded == null) {
+            return true;
+        }
+    }
+    return false;
 };
 
 // Get sprite pixel size and UVs
