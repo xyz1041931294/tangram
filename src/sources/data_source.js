@@ -119,6 +119,13 @@ export default class DataSource {
 
             dest.default_winding = this.default_winding || 'CCW';
             return dest;
+        }).then(dest => {
+            // Use fallback data source if available
+            if (dest.source_data.error) {
+                if (this.fallback) {
+                    return this.fallback.load(dest);
+                }
+            }
         });
     }
 

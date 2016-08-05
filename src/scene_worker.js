@@ -121,6 +121,14 @@ Object.assign(self, {
             }
         }
 
+        // Assign fallback source instances
+        for (let name in self.sources.tiles) {
+            let source = self.sources.tiles[name];
+            if (source.config.fallback) {
+                source.fallback = self.sources.tiles[source.config.fallback];
+            }
+        }
+
         // Clear tile cache if data source config changed
         if (!self.config.sources ||
             !self.last_config.sources ||
