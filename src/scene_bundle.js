@@ -4,7 +4,7 @@ import JSZip from 'jszip';
 
 export class SceneBundle {
 
-    constructor(url, path, parent = null) {
+    constructor({ url, path, parent, delegate }) {
         this.url = url;
 
         // If a base path was provided, use it for resolving local bundle resources only if
@@ -18,6 +18,9 @@ export class SceneBundle {
 
         this.path_for_parent = path || this.path; // for resolving paths relative to a parent bundle
         this.parent = parent;
+
+        this.delegate = (typeof delegate === 'function') ? delegate : null;
+        this.url = (this.delegate && this.delegate(url)) || this.url;
 
         // An ancestor bundle may be a container (e.g. zip file) that needs to resolve relative paths
         // for any scenes it contains, e.g. `root.zip` has a `root.yaml` that includes a `folder/child.yaml`:
@@ -51,9 +54,11 @@ export class SceneBundle {
 
     urlFor(url) {
         if (URLs.isRelativeURL(url) && this.container) {
-            return this.parent.urlFor(this.path_for_parent + url);
+            url = this.parent.urlFor(this.path_for_parent + url);
         }
-        return URLs.addBaseURL(url, this.path);
+        url = URLs.addBaseURL(url, this.path);
+        url = (this.delegate && this.delegate(url)) || url;
+        return url;
     }
 
     pathFor(url) {
@@ -72,8 +77,8 @@ export class SceneBundle {
 
 export class ZipSceneBundle extends SceneBundle {
 
-    constructor(url, path, parent) {
-        super(url, path, parent);
+    constructor({ url, path, parent, delegate }) {
+        super({ url, path, parent, delegate });
         this.zip = null;
         this.files = {};
         this.root = null;
@@ -181,9 +186,9 @@ export class ZipSceneBundle extends SceneBundle {
 
 }
 
-export function createSceneBundle(url, path, parent, type = null) {
+export function createSceneBundle({ url, path, parent, type, delegate }) {
     if (type === 'zip' || (typeof url === 'string' && URLs.extensionForURL(url) === 'zip')) {
-        return new ZipSceneBundle(url, path, parent);
+        return new ZipSceneBundle({ url, path, parent, delegate });
     }
-    return new SceneBundle(url, path, parent);
+    return new SceneBundle({ url, path, parent, delegate });
 }

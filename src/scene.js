@@ -109,7 +109,7 @@ export default class Scene {
 
         // Load scene definition (sources, styles, etc.), then create styles & workers
         this.createCanvas();
-        this.initializing = this.loadScene(config_source, config_path)
+        this.initializing = this.loadScene(config_source, config_path, options.delegate)
             .then(() => this.createWorkers())
             .then(() => {
                 this.resetFeatureSelection();
@@ -762,7 +762,7 @@ export default class Scene {
        Load (or reload) the scene config
        @return {Promise}
     */
-    loadScene(config_source = null, config_path = null) {
+    loadScene(config_source = null, config_path = null, delegate = null) {
         this.config_source = config_source || this.config_source;
         this.config_globals_applied = [];
 
@@ -773,7 +773,7 @@ export default class Scene {
             this.config_path = URLs.pathForURL(config_path);
         }
 
-        return SceneLoader.loadScene(this.config_source, this.config_path).then(config => {
+        return SceneLoader.loadScene(this.config_source, this.config_path, delegate).then(config => {
             this.config = config;
             this.trigger('load', { config: this.config });
             return this.config;

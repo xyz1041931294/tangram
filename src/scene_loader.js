@@ -10,9 +10,9 @@ var SceneLoader;
 export default SceneLoader = {
 
     // Load scenes definitions from URL & proprocess
-    loadScene(url, path = null) {
+    loadScene(url, path = null, delegate = null) {
         let errors = [];
-        return this.loadSceneRecursive({ url, path }, null, errors).
+        return this.loadSceneRecursive({ url, path, delegate }, null, errors).
             then(config => this.finalize(config)).
             then(config => {
                 if (!config) {
@@ -35,12 +35,12 @@ export default SceneLoader = {
     // Optional *initial* path only (won't be passed to recursive 'import' calls)
     // Useful for loading resources in base scene file from a separate location
     // (e.g. in Tangram Play, when modified local scene should still refer to original resource URLs)
-    loadSceneRecursive({ url, path, type }, parent, errors = []) {
+    loadSceneRecursive({ url, path, type, delegate }, parent, errors = []) {
         if (!url) {
             return Promise.resolve({});
         }
 
-        let bundle = createSceneBundle(url, path, parent, type);
+        let bundle = createSceneBundle({ url, path, parent, type, delegate });
 
         return bundle.load().then(config => {
             if (config.import == null) {
