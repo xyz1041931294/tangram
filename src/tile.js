@@ -32,6 +32,8 @@ export default class Tile {
         this.loading = false;
         this.loaded = false;
         this.built = false;
+        this.canceled = false;
+        this.destroyed = false;
         this.error = null;
         this.debug = {};
 
@@ -142,6 +144,7 @@ export default class Tile {
         this.workerMessage('self.removeTile', this.key);
         this.freeResources();
         this.worker = null;
+        this.destroyed = true;
     }
 
     buildAsMessage() {
@@ -177,7 +180,7 @@ export default class Tile {
     }
 
     buildOnWorker() {
-        if (!this.canceled && this.worker) {
+        if (!this.destroyed) {
             this.workerMessage('self.buildTile', { tile: this.buildAsMessage() }).catch(e => { throw e; });
         }
     }

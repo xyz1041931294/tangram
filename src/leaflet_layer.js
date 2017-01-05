@@ -281,6 +281,7 @@ function extendLeaflet(options) {
                 if (this.scene.view.continuous_zoom && map.doubleClickZoom && this.options.modifyDoubleClickZoom !== false) {
 
                     // Simplified version of Leaflet's flyTo, for short animations zooming around a point
+                    let view = this.scene.view;
                     const flyAround = function (map, targetCenter, targetZoom, options) {
                         options = options || {};
                         if (options.animate === false || !L.Browser.any3d) {
@@ -313,8 +314,10 @@ function extendLeaflet(options) {
                                 center = Geo.metersToLatLng(center);
                                 setZoomAroundNoMoveEnd(map, targetCenter, startZoom + (targetZoom - startZoom) * t);
                             } else {
-                                setZoomAroundNoMoveEnd(map, targetCenter, targetZoom)
-                                    ._moveEnd(true);
+                                setZoomAroundNoMoveEnd(map, targetCenter, targetZoom);
+                                console.log('*** RESET ZOOM BECAUSE LAST DOUBLE-CLICK ZOOM FRAME ***');
+                                view.resetZoomTime();
+                                map._moveEnd(true);
                             }
                         }
 

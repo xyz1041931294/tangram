@@ -277,20 +277,24 @@ export default class TileManager {
     loadQueuedTiles(view) {
         const now = +new Date();
 
-        // 30, 250
-        if (now - view.last_zoom_time < 50 &&
-            now - this.last_build_time < 250) { // NB: consider disabling for FF
+        if (this.queued_tiles.length === 0) {
             return;
         }
 
-        if (this.queued_tiles.length > 0) {
-            this.last_build_time = +new Date();
+        let z = {};
+        this.queued_tiles.filter(t => !t.destroyed).forEach(t => z[t.coords.z] = true);
 
-            console.log('*** PROCESS TILE BUILD QUEUE ***');
-
-            this.queued_tiles.forEach(tile => tile.buildOnWorker());
-            this.queued_tiles = [];
+        if (now - view.last_zoom_time < 80) {
+            // now - this.last_build_time < 250) { // NB: consider disabling for FF
+            console.log('*** DELAY TILE LOAD ***', now - view.last_zoom_time, Object.keys(z));
+            return;
         }
+
+        console.log('*** PROCESS TILE BUILD QUEUE ***', now - view.last_zoom_time, Object.keys(z));
+        this.last_build_time = +new Date();
+
+        this.queued_tiles./*filter(t => t.visible).*/forEach(tile => tile.buildOnWorker());
+        this.queued_tiles = [];
     }
 
     clearQueuedTiles() {

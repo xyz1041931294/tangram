@@ -150,12 +150,23 @@ export default class View {
         return changed;
     }
 
+    resetZoomTime () {
+        this.last_zoom_time = 0;
+    }
+
     setZoom (zoom) {
         if (this.zooming) {
             this.zooming = false;
         }
 
-        this.last_zoom_time = +new Date();
+        // immediately trigger tile load if zoom jumps a full level or more in one frame
+        if (Math.abs(this.zoom - zoom) >= 1) {
+            console.log('*** RESET ZOOM BECAUSE >= 1 ZOOM CHANGE ***');
+            this.resetZoomTime();
+        }
+        else {
+            this.last_zoom_time = +new Date();
+        }
 
         let last_tile_zoom = this.tile_zoom;
         let tile_zoom = this.tileZoom(zoom);
@@ -270,10 +281,10 @@ export default class View {
         // let move_buffer = 2;
         // if (this.center_dir_persist > 3) {
         //     switch (this.center_dir) {
-        //         case 'left':    left -= move_buffer; break;
-        //         case 'right':   right += move_buffer; break;
-        //         case 'up':      up -= move_buffer; break;
-        //         case 'down':    down += move_buffer; break;
+        //         case 'left':    left -= move_buffer;    break;
+        //         case 'right':   right += move_buffer;   break;
+        //         case 'up':      up -= move_buffer;      break;
+        //         case 'down':    down += move_buffer;    break;
         //     }
         // }
 
