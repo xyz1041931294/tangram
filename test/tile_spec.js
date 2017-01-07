@@ -66,7 +66,7 @@ describe('Tile', function() {
         });
     });
 
-    describe('.build(generation)', () => {
+    describe('.buildOnWorker(generation)', () => {
         beforeEach(() => {
             sinon.spy(subject, 'workerMessage');
         });
@@ -76,7 +76,7 @@ describe('Tile', function() {
         });
 
         it('calls .workerMessage()', () => {
-            subject.build();
+            subject.buildOnWorker();
             sinon.assert.called(subject.workerMessage);
         });
     });

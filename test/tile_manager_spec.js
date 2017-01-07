@@ -75,18 +75,18 @@ describe('TileManager', function () {
                 tile = tiles[Object.keys(tiles)[0]];
 
                 sinon.spy(tile_manager, 'keepTile');
-                sinon.spy(tile, 'build');
+                sinon.spy(tile, 'markForBuild');
 
                 tile_manager.loadCoordinate(coords);
             });
 
             afterEach(() => {
                 tile_manager.keepTile.restore();
-                tile.build.restore();
+                tile.markForBuild.restore();
             });
 
             it('does not build the tile', () => {
-                assert.isFalse(tile.build.called);
+                assert.isFalse(tile.markForBuild.called);
             });
 
             it('does not keep the tile', () => {
