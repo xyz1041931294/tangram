@@ -111,17 +111,6 @@ function extendLeaflet(options) {
                 };
                 map.on('move', this.hooks.move);
 
-                this.hooks.zoomstart = () => {
-                    if (this._updating_tangram) {
-                        return;
-                    }
-
-                    this._updating_tangram = true;
-                    this.scene.view.startZoom();
-                    this._updating_tangram = false;
-                };
-                map.on('zoomstart', this.hooks.zoomstart);
-
                 this.hooks.moveend = () => {
                     this.scene.view.setPanning(false);
                     this.scene.requestRedraw();
@@ -181,7 +170,6 @@ function extendLeaflet(options) {
                 map.off('layeradd layerremove overlayadd overlayremove', this._updateMapLayerCount);
                 map.off('resize', this.hooks.resize);
                 map.off('move', this.hooks.move);
-                map.off('zoomstart', this.hooks.zoomstart);
                 map.off('moveend', this.hooks.moveend);
                 map.off('click', this.hooks.click);
                 map.off('mousemove', this.hooks.mousemove);

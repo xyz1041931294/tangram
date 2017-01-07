@@ -591,7 +591,7 @@ export default class Scene {
             let mesh = tile.meshes[style_name];
             if (style.render(mesh)) {
                 // Don't incur additional renders while viewport is moving
-                if (!(this.view.panning || this.view.zooming)) {
+                if (!(this.view.panning || this.view.isZooming())) {
                    this.requestRedraw();
                 }
             }

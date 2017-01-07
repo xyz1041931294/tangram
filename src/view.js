@@ -23,7 +23,7 @@ export default class View {
         this.panning = false;
         this.panning_stop_at = 0;
         this.pan_snap_timer = 0;
-        this.zooming = false;
+        this.last_zoom_time = 0;
         this.zoom_direction = 0;
         this.center_dir_persist = 0;
 
@@ -155,10 +155,6 @@ export default class View {
     }
 
     setZoom (zoom) {
-        if (this.zooming) {
-            this.zooming = false;
-        }
-
         // immediately trigger tile load if zoom jumps a full level or more in one frame
         if (Math.abs(this.zoom - zoom) >= 1) {
             console.log('*** RESET ZOOM BECAUSE >= 1 ZOOM CHANGE ***');
@@ -183,10 +179,6 @@ export default class View {
 
         this.updateBounds();
         this.scene.requestRedraw();
-    }
-
-    startZoom () {
-        this.zooming = true;
     }
 
     isZooming () {
