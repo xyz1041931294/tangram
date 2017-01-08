@@ -21,24 +21,6 @@ describe('TileManager', function () {
         scene = null;
     });
 
-    describe('.queueCoordinate(coords)', () => {
-
-        let coords = midtownTile;
-
-        beforeEach(() => {
-            sinon.spy(tile_manager, 'queueCoordinate');
-
-            return scene.load().then(() => {
-                tile_manager.queueCoordinate(coords);
-                tile_manager.loadQueuedCoordinates();
-            });
-        });
-
-        it('calls queueCoordinate with the queued tile', () => {
-            sinon.assert.calledWith(tile_manager.queueCoordinate, coords);
-        });
-    });
-
     describe('.loadCoordinate(coords)', () => {
 
         let coords = midtownTile;

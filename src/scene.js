@@ -778,7 +778,7 @@ export default class Scene {
                 }
             });
             this.tile_manager.updateTilesForView(); // picks up additional tiles for any new/changed data sources
-            this.tile_manager.checkBuildQueue();    // resolve immediately if no tiles to build
+            this.tile_manager.checkBuildProgress(); // resolve immediately if no tiles to build
             this.tile_manager.loadQueuedTiles(this.view);
         }).then(() => {
             // Profiling

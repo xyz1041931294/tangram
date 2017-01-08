@@ -11,7 +11,6 @@ export default class TileManager {
         this.tiles = {};
         this.pyramid = new TilePyramid();
         this.visible_coords = {};
-        this.queued_coords = [];
         this.queued_tiles = [];
         this.last_build_time = 0;
         this.building_tiles = null;
@@ -28,7 +27,6 @@ export default class TileManager {
         this.tiles = {};
         this.pyramid = null;
         this.visible_coords = {};
-        this.queued_coords = [];
         this.queued_tiles = [];
         this.last_build_time = 0;
         this.scene = null;
@@ -96,7 +94,7 @@ export default class TileManager {
         let tile_coords = this.view.findVisibleTileCoordinates();
         for (let c=0; c < tile_coords.length; c++) {
             const coords = tile_coords[c];
-            this.queueCoordinate(coords);
+            this.loadCoordinate(coords);
             this.visible_coords[coords.key] = coords;
         }
 
@@ -109,7 +107,6 @@ export default class TileManager {
             tile.update();
         });
 
-        this.loadQueuedCoordinates();
         this.updateProxyTiles();
         this.view.pruneTilesForView();
         this.updateRenderableTiles();
@@ -208,27 +205,6 @@ export default class TileManager {
         return Object.keys(this.tiles).some(k => this.tiles[k].visible && !this.tiles[k].built);
     }
 
-    // Queue a tile for load
-    queueCoordinate(coords) {
-        this.queued_coords[this.queued_coords.length] = coords;
-    }
-
-    // Load all queued tiles
-    loadQueuedCoordinates() {
-        if (this.queued_coords.length === 0) {
-            return;
-        }
-
-        // Sort queued tiles from center tile
-        this.queued_coords.sort((a, b) => {
-            let ad = Math.abs(this.view.center.tile.x - a.x) + Math.abs(this.view.center.tile.y - a.y);
-            let bd = Math.abs(this.view.center.tile.x - b.x) + Math.abs(this.view.center.tile.y - b.y);
-            return (bd > ad ? -1 : (bd === ad ? 0 : 1));
-        });
-        this.queued_coords.forEach(coords => this.loadCoordinate(coords));
-        this.queued_coords = [];
-    }
-
     // Load all tiles to cover a given logical tile coordinate
     loadCoordinate(coords) {
         // Skip if not at current scene zoom
@@ -263,7 +239,7 @@ export default class TileManager {
     // Sort and build a list of tiles
     buildTiles(tiles) {
         Tile.sort(tiles).forEach(tile => this.buildTile(tile));
-        this.checkBuildQueue();
+        this.checkBuildProgress();
     }
 
     buildTile(tile, options) {
@@ -285,7 +261,7 @@ export default class TileManager {
         this.queued_tiles.filter(t => !t.destroyed).forEach(t => z[t.coords.z] = true);
 
         if (now - view.last_zoom_time < 80) {
-            // now - this.last_build_time < 250) { // NB: consider disabling for FF
+            // now - this.last_build_time < 250) { // TODO: is this needed?
             console.log('*** DELAY TILE LOAD ***', now - view.last_zoom_time, Object.keys(z));
             return;
         }
@@ -293,7 +269,17 @@ export default class TileManager {
         console.log('*** PROCESS TILE BUILD QUEUE ***', now - view.last_zoom_time, Object.keys(z));
         this.last_build_time = +new Date();
 
-        this.queued_tiles./*filter(t => t.visible).*/forEach(tile => tile.buildOnWorker());
+        // Sort queued tiles from center tile
+        this.queued_tiles = this.queued_tiles.
+            filter(t => !t.destroyed). // skip tiles that have been destroyed since queuing
+            sort((a, b) => {
+                let center = this.view.center.tile;
+                let ad = Math.abs(center.x - a.coords.x) + Math.abs(center.y - a.coords.y);
+                let bd = Math.abs(center.x - b.coords.x) + Math.abs(center.y - b.coords.y);
+                return (bd > ad ? -1 : (bd === ad ? 0 : 1));
+            });
+        console.log('*** SORTED TILES ***', this.queued_tiles.map(t => t.coords.key));
+        this.queued_tiles.forEach(tile => tile.buildOnWorker());
         this.queued_tiles = [];
     }
 
@@ -356,12 +342,12 @@ export default class TileManager {
         if (this.building_tiles) {
             log('trace', `tileBuildStop for ${key}: ${Object.keys(this.building_tiles).length}`);
             delete this.building_tiles[key];
-            this.checkBuildQueue();
+            this.checkBuildProgress();
         }
     }
 
     // Check status of tile building queue and notify scene when we're done
-    checkBuildQueue() {
+    checkBuildProgress() {
         if (!this.building_tiles || Object.keys(this.building_tiles).length === 0) {
             this.building_tiles = null;
             this.scene.tileManagerBuildDone();
