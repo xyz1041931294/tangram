@@ -100,6 +100,12 @@ function extendLeaflet(options) {
                     view.zoom = Math.min(map.getZoom(), map.getMaxZoom() || Geo.default_view_max_zoom);
 
                     this.scene.view.setView(view);
+
+                    if (!this._tangram_zooming) {
+                        this.scene.view.resetZoomTime();
+                    }
+                    this._tangram_zooming = false;
+
                     if (this._mapLayerCount > 1) {
                         // if there are other map pane layers active, redraw immediately to stay in better visual sync
                         // otherwise, wait until next regular animation loop iteration
@@ -214,10 +220,10 @@ function extendLeaflet(options) {
             // (should generally lead to smoother scroll with Tangram frame re-render)
             modifyScrollWheelBehavior (map) {
                 if (this.scene.view.continuous_zoom && map.scrollWheelZoom && this.options.modifyScrollWheel !== false) {
-                    map.options.zoomSnap = 0;
-
-                    const enabled = map.scrollWheelZoom.enabled();
+                    let layer = this;
+                    let enabled = map.scrollWheelZoom.enabled();
                     map.scrollWheelZoom.disable();
+                    map.options.zoomSnap = 0;
 
                     // Chrome and Safari have smoother scroll-zoom without actively throttling the mouse wheel,
                     // while FF and Edge/IE do better with throttling.
@@ -250,6 +256,7 @@ function extendLeaflet(options) {
 
                         if (!delta) { return; }
 
+                        layer._tangram_zooming = true;
                         if (map.options.scrollWheelZoom === 'center') {
                             setZoomAroundNoMoveEnd(map, map.getCenter(), zoom + delta);
                         } else {
@@ -269,7 +276,6 @@ function extendLeaflet(options) {
                 if (this.scene.view.continuous_zoom && map.doubleClickZoom && this.options.modifyDoubleClickZoom !== false) {
 
                     // Simplified version of Leaflet's flyTo, for short animations zooming around a point
-                    let view = this.scene.view;
                     const flyAround = function (map, targetCenter, targetZoom, options) {
                         options = options || {};
                         if (options.animate === false || !L.Browser.any3d) {
@@ -300,11 +306,10 @@ function extendLeaflet(options) {
                                 var center = from.add(to.subtract(from).multiplyBy(t));
                                 center = [center.x, center.y];
                                 center = Geo.metersToLatLng(center);
+
                                 setZoomAroundNoMoveEnd(map, targetCenter, startZoom + (targetZoom - startZoom) * t);
                             } else {
                                 setZoomAroundNoMoveEnd(map, targetCenter, targetZoom);
-                                console.log('*** RESET ZOOM BECAUSE LAST DOUBLE-CLICK ZOOM FRAME ***');
-                                view.resetZoomTime();
                                 map._moveEnd(true);
                             }
                         }
