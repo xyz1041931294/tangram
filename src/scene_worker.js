@@ -110,6 +110,16 @@ Object.assign(self, {
             if (!source) {
                 continue;
             }
+
+            // For non-tiled data, copy loaded data from previous source instance
+            if (last_sources[name] && !last_sources[name].tiled &&
+                !source.tiled &&
+                source.url === last_sources[name].url) {
+                source.load_data = last_sources[name].load_data;
+                source.tile_indexes = last_sources[name].tile_indexes;
+                console.log(`*** COPYING non-tiled data for source ${name}`);
+            }
+
             self.sources[name] = source;
             changed = true;
         }
