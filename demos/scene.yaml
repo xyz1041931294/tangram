@@ -90,7 +90,19 @@ styles:
                         discard;
                     }
                     else if (isFeatureClick()) {
-                        color.rgb *= 1. - (abs(sin(u_time * 1.)) * .6);
+                        color.rgb *= (abs(sin(u_time * 10.))) * .75;
+                        color.rgb += .5;
+                    }
+
+                position: |
+                    if (isFeatureHover()) {
+                        position.z += 50.;
+                    }
+                    else if (isFeatureClick()) {
+                        //position.z += (abs(sin(u_time * 10.))) * 50.;
+                        position.z *= (abs(sin(u_time * 10.))) * 3. + 1.;
+                        position.x += (sin(u_time * 10.)) * 10. * position.z/100. + 1.;
+                        position.z += 25.;
                     }
 
     icons:
@@ -503,10 +515,11 @@ layers:
 
         draw:
             polygons:
-                # style: buildings
+                style: buildings
                 # selection_prop: function() { return feature.name && feature.name[0]; }
+                selection_prop: function() { return feature.root_id || feature.id; }
                 # selection_prop: function() { return feature.height && feature.height > 25; }
-                selection_prop: function() { return Math.ceil((feature.height > 50 && feature.height)/50); }
+                # selection_prop: function() { return Math.ceil((feature.height > 50 && feature.height)/50); }
                 # selection_prop: function() { return Math.ceil(Math.random()*10); }
                 selection_group: buildings
                 # hover_color: yellow

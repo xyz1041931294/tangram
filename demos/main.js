@@ -25,10 +25,9 @@ Enjoy!
         rS, url_hash, map_start_location, url_style;
 
     getValuesFromUrl();
-
+    var selectedObj;
     // default source, can be overriden by URL
-    var
-        map = L.map('map', {
+    var map = L.map('map', {
             maxZoom: 20,
             zoomSnap: 0,
             trackResize: true,
@@ -39,7 +38,19 @@ Enjoy!
             scene: scene_url,
             events: {
                 hover: onFeatureHover,
-                click: function(selection){ scene.requestRedraw(); console.log(selection); }
+                click: function(selection){ 
+                    scene.requestRedraw();
+                    if (typeof selection.feature !== 'undefined' &&
+                    selection.feature.properties.root_id !== selectedObj &&
+                    selection.feature.properties.id !== selectedObj) {
+                        selectedObj = selection.feature.properties.root_id || selection.feature.properties.id;
+                        console.log(selection.feature.properties);
+                    } else {
+                        scene.selection.clearState('click');
+                        scene.selection.clearState('hover');
+                        selectedObj = '';
+                    }
+                }
             },
             preUpdate: preUpdate,
             postUpdate: postUpdate,
