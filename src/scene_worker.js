@@ -38,11 +38,12 @@ Object.assign(self, {
     },
 
     // Starts a config refresh
-    updateConfig ({ config, generation, introspection }) {
+    updateConfig ({ config, generation, introspection, preserve_tiles }) {
         config = JSON.parse(config);
 
         self.generation = generation;
         self.introspection = introspection;
+        self.preserve_tiles = preserve_tiles;
 
         // Data block functions are not context wrapped like the rest of the style functions are
         // TODO: probably want a cleaner way to exclude these
@@ -159,6 +160,9 @@ Object.assign(self, {
                     tile.loading = false;
                     tile.loaded = true;
                     Tile.buildGeometry(tile, self);
+                    if (self.preserve_tiles === false) {
+                        delete self.tiles[tile.key];
+                    }
                 }).catch((error) => {
                     tile.loading = false;
                     tile.loaded = false;
@@ -176,6 +180,9 @@ Object.assign(self, {
                 // Build geometry
                 try {
                     Tile.buildGeometry(tile, self);
+                    if (self.preserve_tiles === false) {
+                        delete self.tiles[tile.key];
+                    }
                 }
                 catch(error) {
                     // Send error to main thread
@@ -203,8 +210,8 @@ Object.assign(self, {
 
     // Remove tile
     removeTile (key) {
-        var tile = self.tiles[key];
-
+        // remove tile from cache if present
+        let tile = self.tiles[key];
         if (tile != null) {
             // Cancel if loading
             if (tile.loading === true) {
@@ -212,12 +219,12 @@ Object.assign(self, {
                 tile.loading = false;
                 Tile.cancel(tile);
             }
-
-            // Remove from cache
-            FeatureSelection.clearTile(key);
             delete self.tiles[key];
             log('trace', `remove tile from cache for ${key}`);
         }
+
+        // remove from feature selection (present for interactive features, even if tile object itself isn't in cache)
+        FeatureSelection.clearTile(key);
     },
 
     // Get a feature from the selection map

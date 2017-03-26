@@ -67,6 +67,7 @@ export default class Scene {
         this.media_capture = new MediaCapture();
         this.selection = null;
         this.introspection = false;
+        this.preserve_tiles = options.preserveTiles || false;
         this.resetTime();
 
         this.container = options.container;
@@ -1047,7 +1048,8 @@ export default class Scene {
         return WorkerBroker.postMessage(this.workers, 'self.updateConfig', {
             config: config_serialized,
             generation: this.generation,
-            introspection: this.introspection
+            introspection: this.introspection,
+            preserve_tiles: this.preserve_tiles
         });
     }
 

@@ -67,6 +67,7 @@ function extendLeaflet(options) {
                         highDensityDisplay: this.options.highDensityDisplay,
                         logLevel: this.options.logLevel,
                         introspection: this.options.introspection,
+                        preserveTiles: this.options.preserveTiles,
                         // advanced option, app will have to manually called scene.update() per frame
                         disableRenderLoop: this.options.disableRenderLoop
                     });
