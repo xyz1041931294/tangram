@@ -4,6 +4,7 @@ import {StyleParser} from './style_parser';
 import FeatureSelection from '../selection';
 import ShaderProgram from '../gl/shader_program';
 import VBOMesh from '../gl/vbo_mesh';
+import VertexData from '../gl/vertex_data';
 import Texture from '../gl/texture';
 import Material from '../material';
 import Light from '../light';
@@ -128,9 +129,14 @@ export var Style = {
 
         if (tile_data && tile_data.vertex_data && tile_data.vertex_data.vertex_count > 0) {
             // Only keep final byte buffer
-            tile_data.vertex_data.end();
-            tile_data.vertex_elements = tile_data.vertex_data.element_buffer;
-            tile_data.vertex_data = tile_data.vertex_data.vertex_buffer; // convert from instance to raw typed array
+            let data = tile_data.vertex_data.end();
+            tile_data.vertex_elements = data.element_buffer;
+            tile_data.vertex_data = data.vertex_buffer; // convert from instance to raw typed array
+
+            if (data.optional_data) {
+                tile_data.optional_vertex_data = data.optional_data.vertex_buffer;
+                // tile_data.optional_vertex_elements = data.optional_data.element_buffer;
+            }
 
             // Load raster tiles passed from data source
             // Blocks mesh completion to avoid flickering
@@ -165,10 +171,14 @@ export var Style = {
 
         // First feature in this render style?
         if (!this.tile_data[tile.key].vertex_data) {
-            this.tile_data[tile.key].vertex_data = this.vertex_layout.createVertexData();
+            this.tile_data[tile.key].vertex_data = this.createVertexData();
         }
 
         this.buildGeometry(feature.geometry, style, this.tile_data[tile.key].vertex_data, context);
+    },
+
+    createVertexData () {
+        return new VertexData(this.vertex_layout);
     },
 
     buildGeometry (geometry, style, vertex_data, context) {
@@ -331,6 +341,10 @@ export var Style = {
     },
 
     makeMesh (vertex_data, vertex_elements, options = {}) {
+        options = Object.assign(options, {
+            optional_vertex_layout: this.optional_vertex_layout//,
+            // optional_vertex_data: options.optional_vertex_data
+        });
         return new VBOMesh(this.gl, vertex_data, vertex_elements, this.vertex_layout, options);
     },
 

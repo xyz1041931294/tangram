@@ -12,8 +12,6 @@ export default class VBOMesh  {
         this.vertex_data = vertex_data; // typed array
         this.element_data = element_data; // typed array
         this.vertex_layout = vertex_layout;
-        this.vertex_buffer = this.gl.createBuffer();
-        this.buffer_size = this.vertex_data.byteLength;
         this.draw_mode = options.draw_mode || this.gl.TRIANGLES;
         this.data_usage = options.data_usage || this.gl.STATIC_DRAW;
         this.vertices_per_geometry = 3; // TODO: support lines, strip, fan, etc.
@@ -21,11 +19,16 @@ export default class VBOMesh  {
         this.retain = options.retain || false; // whether to retain mesh data in CPU after uploading to GPU
         this.created_at = +new Date();
         this.fade_in_time = options.fade_in_time || 0; // optional time to fade in mesh
-
-        this.vertex_count = this.vertex_data.byteLength / this.vertex_layout.stride;
-        this.element_count = 0;
         this.vaos = {}; // map of VertexArrayObjects, keyed by program
 
+        // Vertex buffer
+        this.vertex_buffer = this.gl.createBuffer();
+        this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.vertex_buffer);
+        this.gl.bufferData(this.gl.ARRAY_BUFFER, this.vertex_data, this.data_usage);
+        this.vertex_count = this.vertex_data.byteLength / this.vertex_layout.stride;
+        this.buffer_size = this.vertex_data.byteLength;
+
+        // Element buffer
         this.toggle_element_array = false;
         if (this.element_data) {
             this.toggle_element_array = true;
@@ -38,11 +41,18 @@ export default class VBOMesh  {
             this.gl.bufferData(this.gl.ELEMENT_ARRAY_BUFFER, this.element_data, this.data_usage);
         }
         else {
+            this.element_count = 0;
             this.geometry_count = this.vertex_count / this.vertices_per_geometry;
         }
 
-        this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.vertex_buffer);
-        this.gl.bufferData(this.gl.ARRAY_BUFFER, this.vertex_data, this.data_usage);
+        // Optional additional vertex buffer
+        this.optional_vertex_layout = options.optional_vertex_layout;
+        if (this.optional_vertex_layout && options.optional_vertex_data) {
+            this.optional_vertex_buffer = this.gl.createBuffer();
+            this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.optional_vertex_buffer);
+            this.gl.bufferData(this.gl.ARRAY_BUFFER, options.optional_vertex_data, this.data_usage);
+            this.buffer_size += options.optional_vertex_data.byteLength;
+        }
 
         if (!this.retain) {
             delete this.vertex_data;
@@ -102,6 +112,17 @@ export default class VBOMesh  {
                     this.gl.bindBuffer(this.gl.ELEMENT_ARRAY_BUFFER, this.element_buffer);
                 }
                 this.vertex_layout.enable(this.gl, program, force);
+
+                if (this.optional_vertex_layout) {
+                    if (this.optional_vertex_buffer) {
+                        this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.optional_vertex_buffer);
+                        this.optional_vertex_layout.enable(this.gl, program, force);
+                    }
+                    else {
+                        // enable with static default values instead
+                        this.optional_vertex_layout.enable(this.gl, program, force, true);
+                    }
+                }
             });
         }
     }
@@ -123,6 +144,10 @@ export default class VBOMesh  {
         if (this.element_buffer) {
             this.gl.deleteBuffer(this.element_buffer);
             this.element_buffer = null;
+        }
+
+        if (this.optional_vertex_buffer) {
+            this.gl.deleteBuffer(this.optional_vertex_buffer);
         }
 
         delete this.vertex_data;

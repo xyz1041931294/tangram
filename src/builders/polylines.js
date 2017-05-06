@@ -42,7 +42,8 @@ export function buildPolylines (lines, width, vertex_data, vertex_template,
         scaling_index,
         scaling_normalize,
         join, cap,
-        miter_limit
+        miter_limit,
+        optional_vertex_template
     }) {
 
     var cap_type = cap ? CAP_TYPE[cap] : CAP_TYPE.butt;
@@ -79,6 +80,7 @@ export function buildPolylines (lines, width, vertex_data, vertex_template,
         texcoord_index,
         texcoord_width,
         texcoord_normalize,
+        optional_vertex_template,
         geom_count: 0
     };
 
@@ -423,7 +425,7 @@ function addVertex(coordinate, normal, uv, context) {
     var vertex_data = context.vertex_data;
 
     buildVertexTemplate(vertex_template, coordinate, uv, normal, context);
-    vertex_data.addVertex(vertex_template);
+    vertex_data.addVertex(vertex_template, context.optional_vertex_template);
 }
 
 function buildVertexTemplate (vertex_template, vertex, texture_coord, scale, context) {

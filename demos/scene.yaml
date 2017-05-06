@@ -328,6 +328,7 @@ layers:
                     style: dashed
                     color: white
                     width: [[15, 0px], [18, 3px]]
+                    offset: 20
                     outline:
                         width: 0
 
@@ -770,7 +771,10 @@ layers:
         draw:
             lines:
                 style: transit-lines
-                order: 400
+                color: yellow
+                width: 5px
+                order: 4000
+                offset: 10
 
     # schools:
     #     data: { source: schools }

@@ -5,6 +5,7 @@ import {StyleParser} from '../style_parser';
 import gl from '../../gl/constants'; // web workers don't have access to GL context, so import all GL constants
 import Texture from '../../gl/texture';
 import VertexLayout from '../../gl/vertex_layout';
+import {VertexDataDual} from '../../gl/vertex_data';
 import {buildPolylines} from '../../builders/polylines';
 import renderDashArray from './dasharray';
 import Geo from '../../geo';
@@ -57,12 +58,21 @@ Object.assign(Lines, {
         }
 
         this.vertex_layout = new VertexLayout(attribs);
+        this.optional_vertex_layout = new VertexLayout([
+            { name: 'a_offset', size: 1, type: gl.FLOAT, normalized: false, default: 0 }
+        ]);
+        this.optional_vertex_template = [null];
 
         // Additional single-allocated object used for holding outline style as it is processed
         // Separate from this.feature_style so that outline properties do not overwrite calculated
         // inline properties (outline call is made *within* the inline call)
         this.outline_feature_style = {};
         this.inline_feature_style = this.feature_style; // save reference to main computed style object
+    },
+
+    // Override
+    createVertexData () {
+        return new VertexDataDual(this.vertex_layout, { optional_vertex_layout: this.optional_vertex_layout });
     },
 
     // Override
@@ -178,6 +188,7 @@ Object.assign(Lines, {
         style.cap = draw.cap;
         style.join = draw.join;
         style.miter_limit = draw.miter_limit;
+        style.offset = draw.offset;
         style.tile_edges = draw.tile_edges; // usually activated for debugging, or rare visualization needs
 
         // Construct an outline style
@@ -205,6 +216,7 @@ Object.assign(Lines, {
                 style.outline.cap = draw.outline.cap || draw.cap;
                 style.outline.join = draw.outline.join || draw.join;
                 style.outline.miter_limit = draw.outline.miter_limit || draw.miter_limit;
+                style.outline.offset = draw.offset;
                 style.outline.style = draw.outline.style || this.name;
 
                 // Explicitly defined outline order, or inherited from inner line
@@ -306,6 +318,8 @@ Object.assign(Lines, {
         // Main line
         this.feature_style = this.inline_feature_style; // restore calculated style for inline
         let vertex_template = this.makeVertexTemplate(style);
+        this.optional_vertex_template[0] = style.offset;
+
         return buildPolylines(
             lines,
             style.width,
@@ -322,7 +336,8 @@ Object.assign(Lines, {
                 texcoord_normalize: 65535, // scale UVs to unsigned shorts
                 closed_polygon: options && options.closed_polygon,
                 remove_tile_edges: !style.tile_edges && options && options.remove_tile_edges,
-                tile_edge_tolerance: Geo.tile_scale * context.tile.pad_scale * 2
+                tile_edge_tolerance: Geo.tile_scale * context.tile.pad_scale * 2,
+                optional_vertex_template: (this.optional_vertex_template[0] && this.optional_vertex_template)
             }
         );
     },

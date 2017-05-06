@@ -17,7 +17,7 @@ let array_types = {
 // Used to construct a mesh/VBO for rendering
 export default class VertexData {
 
-    constructor (vertex_layout, { prealloc = 500 } = {}) {
+    constructor (vertex_layout, { prealloc = 500, prefill } = {}) {
         this.vertex_layout = vertex_layout;
         this.vertex_elements = new VertexElements();
         this.stride = this.vertex_layout.stride;
@@ -39,6 +39,14 @@ export default class VertexData {
         this.realloc_count = 0;
         this.setBufferViews();
         this.setAddVertexFunction();
+
+        // Prefill with default data?
+        this.template = this.vertex_layout.makeTemplate();
+        if (prefill) {
+            for (let i=0; i < prefill; i++) {
+                this.addVertex(this.template);
+            }
+        }
     }
 
     // (Re-)allocate typed views into the main buffer - only create the types we need for this layout
@@ -99,3 +107,43 @@ export default class VertexData {
 }
 
 VertexData.array_pool = []; // pool of currently available (previously used) buffers (uint8)
+
+export class VertexDataDual extends VertexData {
+
+    constructor (vertex_layout, options = {}) {
+        super(vertex_layout, options);
+        if (options.optional_vertex_layout) {
+            this.optional_vertex_layout = options.optional_vertex_layout;
+        }
+    }
+
+    addVertex (vertex, optional_vertex) {
+        super.addVertex(vertex);
+
+        if (this.optional_vertex_layout) {
+            // First vertex?
+            if (optional_vertex && this.optional_data == null) {
+                this.optional_data = new VertexData(this.optional_vertex_layout, { prefill: this.vertex_count - 1 });
+            }
+
+            if (this.optional_data) {
+                if (optional_vertex) {
+                    this.optional_data.addVertex(optional_vertex);
+                }
+                else {
+                    this.optional_data.addVertex(this.optional_data.template);
+                }
+            }
+        }
+    }
+
+    // Finalize vertex buffer for use in constructing a mesh
+    end () {
+        super.end();
+        if (this.optional_data) {
+            this.optional_data.end();
+        }
+        return this;
+    }
+
+}

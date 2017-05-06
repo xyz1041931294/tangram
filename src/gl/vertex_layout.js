@@ -47,6 +47,7 @@ export default class VertexLayout {
             for (let s=0; s < attrib.size; s++) {
                 this.components.push({
                     type: attrib.type,
+                    default: attrib.default,
                     shift,
                     offset: offset_typed++,
                     index: count++
@@ -63,7 +64,7 @@ export default class VertexLayout {
     // Assumes that the desired vertex buffer (VBO) is already bound
     // If a given program doesn't include all attributes, it can still use the vertex layout
     // to read those attribs that it does recognize, using the attrib offsets to skip others.
-    enable (gl, program, force) {
+    enable (gl, program, force = false, use_default = false) {
         var attrib, location;
 
         // Enable all attributes for this layout
@@ -72,10 +73,28 @@ export default class VertexLayout {
             location = program.attribute(attrib.name).location;
 
             if (location !== -1) {
-                if (!VertexLayout.enabled_attribs[location] || force) {
-                    gl.enableVertexAttribArray(location);
+                // Use fixed default value?
+                if (use_default) {
+                    if (attrib.default != null) {
+                        let attribMethod = `vertexAttrib${attrib.size}f`;
+                        if (gl[attribMethod] instanceof Function) {
+                            gl[attribMethod](location, attrib.default);
+                        }
+                        // else {
+                        //     // error, bad method?
+                        // }
+                    }
+                    // else {
+                    //     // error, missing default value
+                    // }
                 }
-                gl.vertexAttribPointer(location, attrib.size, attrib.type, attrib.normalized, this.stride, attrib.offset);
+                else {
+                    if (!VertexLayout.enabled_attribs[location] || force) {
+                        gl.enableVertexAttribArray(location);
+                    }
+                    gl.vertexAttribPointer(location, attrib.size, attrib.type, attrib.normalized, this.stride, attrib.offset);
+                }
+
                 VertexLayout.enabled_attribs[location] = program;
             }
         }
@@ -141,6 +160,15 @@ export default class VertexLayout {
         }
 
         this.addVertex = VertexLayout.add_vertex_funcs[key];
+    }
+
+    // Make a plain JS array template for a single vertex (with default values where available)
+    makeTemplate () {
+        let template = [];
+        for (let c=0; c < this.components.length; c++) {
+            template.push(this.components[c].default || 0); // TODO support vector types for default vals
+        }
+        return template;
     }
 
 }

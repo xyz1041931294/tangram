@@ -308,6 +308,7 @@ export default class Tile {
                             tile.mesh_data[style.name] = {
                                 vertex_data: style_data.vertex_data,
                                 vertex_elements: style_data.vertex_elements,
+                                optional_vertex_data: style_data.optional_vertex_data,
                                 uniforms: style_data.uniforms,
                                 textures: style_data.textures
                             };

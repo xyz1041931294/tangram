@@ -28,6 +28,7 @@ attribute vec4 a_color;
     // z:  half-width of line (amount to extrude)
     // w:  scaling factor for interpolating width between zooms
     attribute vec4 a_extrude;
+    attribute float a_offset;
 #endif
 
 varying vec4 v_position;
@@ -98,6 +99,8 @@ void main() {
         #pragma tangram: width
 
         position.xy += extrude * width;
+
+        position.x += a_offset * 50.;
     #endif
 
     // World coordinates for 3d procedural textures
