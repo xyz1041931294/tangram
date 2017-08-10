@@ -46,29 +46,51 @@ export function mergeTrees(matchingTrees, group) {
     };
 
     // Iterate trees in parallel
+    draws = [];
+
     for (let x=0; x < treeDepth; x++) {
         // Pull out the requested draw group, for each tree, at this depth
-        draws = matchingTrees.map(tree => tree[x] && tree[x][group]);
-        if (draws.length === 0) {
-            continue;
-        }
-
-        // Sort by layer name before merging, so layers are applied deterministically
-        // when multiple layers modify the same properties
-        draws.sort((a, b) => (a && a.layer_name) > (b && b.layer_name) ? 1 : -1);
-
-        // Merge draw objects
-        mergeObjects(draw, ...draws);
-
-        // Remove layer names, they were only used transiently to sort and calculate final layer
-        // (final merged names will not be accurate since only one tree can win)
-        delete draw.layer_name;
+        let depth_draws = matchingTrees.map(tree => tree[x] && tree[x][group]).filter(x => x);
+        depth_draws.forEach(draw => draw.depth = x);
+        draws.push(...depth_draws);
     }
+
+    // Sort by: precedence (if available), layer depth, layer name (as tie breaker)
+    draws.sort((a, b) => {
+        if (a.precedence != null && b.precedence != null) {
+            if (a.precedence === b.precedence) {
+                if (a.depth !== b.depth) {
+                    return a.depth - b.depth;
+                }
+                return a.layer_name > b.layer_name ? 1 : -1;
+            }
+            return b.precedence - a.precedence;
+        }
+        else if (a.precedence != null) {
+            return 1;
+        }
+        else if (b.precedence != null) {
+            return -1;
+        }
+        else if (a.depth !== b.depth) {
+            return a.depth - b.depth;
+        }
+        else {
+            return a.layer_name > b.layer_name ? 1 : -1;
+        }
+    });
+
+    mergeObjects(draw, ...draws);
 
     // Short-circuit if not visible
     if (draw.visible === false) {
         return null;
     }
+
+    // Remove transient properties from sorting/merging
+    delete draw.layer_name;
+    delete draw.depth;
+    delete draw.precedence;
 
     return draw;
 }
